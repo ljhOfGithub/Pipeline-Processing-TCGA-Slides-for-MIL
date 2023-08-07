@@ -21,7 +21,7 @@ import staintools
 import torchstain
 import openslide
 import cv2
-
+workers_per_gpu=0
 from utils import stainlib_augmentation
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -124,14 +124,26 @@ def color_normalization(img, normalizer):
 	:return
 	    torch.Tensor() with shape of [C, H, W]
 	"""
+	import pdb
+	# pdb.set_trace()
 	img = staintools.LuminosityStandardizer.standardize(img)
+	import pdb
+	# pdb.set_trace()
 	try:
 		if isinstance(normalizer, torchstain.normalizers.torch_macenko_normalizer.TorchMacenkoNormalizer):
+		# if isinstance(normalizer, torchstain.torch.normalizers.macenko.TorchMacenkoNormalizer):
+			import pdb
+			pdb.set_trace()#经过/opt/tljh/user/lib/python3.9/site-packages/torchvision/transforms/transforms.py(96)__call__()才到/home/jupyter-ljh/.local/lib/python3.9/site-packages/torchstain/normalizers/torch_macenko_normalizer.py
 			rimg = normalizer.normalize(T(img), stains=False)[0]
 		else:
 			rimg = normalizer.transform(img)
 			rimg = torch.from_numpy(img)
 	except Exception as e:
+		print(e)
+		import traceback
+		traceback.print_exc()
+		import pdb
+		# pdb.set_trace()
 		print("skiped color norm.")
 		rimg = torch.from_numpy(img)
 	# put channel first: [C, H, W]
@@ -148,6 +160,7 @@ def get_color_normalizer(name, cn_method='macenko'):
 	target = staintools.LuminosityStandardizer.standardize(target)
 	if cn_method == 'macenko':
 		normalizer = torchstain.MacenkoNormalizer(backend='torch')
+		# normalizer = torchstain.normalizers.MacenkoNormalizer(backend='torch')
 		normalizer.fit(T(target))
 	else:
 		normalizer = staintools.StainNormalizer(method='vahadane')
@@ -223,7 +236,8 @@ def collate_features(batch):
 
 
 def get_simple_loader(dataset, batch_size=1, num_workers=1):
-	kwargs = {'num_workers': 4, 'pin_memory': False, 'num_workers': num_workers} if device.type == "cuda" else {}
+	# kwargs = {'num_workers': 4, 'pin_memory': False, 'num_workers': num_workers} if device.type == "cuda" else {}
+	kwargs = {'num_workers': 0, 'pin_memory': False, 'num_workers': num_workers} if device.type == "cuda" else {}
 	loader = DataLoader(dataset, batch_size=batch_size, sampler = sampler.SequentialSampler(dataset), collate_fn = collate_MIL, **kwargs)
 	return loader 
 
@@ -231,7 +245,8 @@ def get_split_loader(split_dataset, training = False, testing = False, weighted 
 	"""
 		return either the validation loader or training loader 
 	"""
-	kwargs = {'num_workers': 4} if device.type == "cuda" else {}
+	# kwargs = {'num_workers': 4} if device.type == "cuda" else {}
+	kwargs = {'num_workers': 0} if device.type == "cuda" else {}
 	if not testing:
 		if training:
 			if weighted:

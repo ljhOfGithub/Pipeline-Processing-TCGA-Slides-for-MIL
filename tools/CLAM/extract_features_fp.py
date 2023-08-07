@@ -44,7 +44,8 @@ def compute_w_loader(file_path, output_path, wsi, model,
         custom_downsample=custom_downsample, target_patch_size=target_patch_size, 
         sampler_setting=sampler_setting, color_normalizer=color_normalizer, 
         color_augmenter=color_augmenter, add_patch_noise=add_patch_noise)
-    kwargs = {'num_workers': 4, 'pin_memory': True} if device.type == "cuda" else {}   #num_workers 4->0
+    # kwargs = {'num_workers': 4, 'pin_memory': True} if device.type == "cuda" else {}   #num_workers 4->0
+    kwargs = {'num_workers': 0, 'pin_memory': True} if device.type == "cuda" else {}   #num_workers 4->0
     loader = DataLoader(dataset=dataset, batch_size=batch_size, **kwargs, collate_fn=collate_features)
 
     if verbose > 0:
